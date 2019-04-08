@@ -1,33 +1,23 @@
 import struct
-import numpy
-from collections import namedtuple
 
 # ===============================================================
 # Math
 # ===============================================================
 
-# Vertex3Type = numpy.dtype([('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-# Vertex2Type = numpy.dtype([('x', 'f4'), ('y', 'f4')])
 
 class V3(object):
-  def __init__(self, x, y = None, z = None):
-    if (type(x) == numpy.matrix):
-      self.x, self.y, self.z = x.tolist()[0]
-    else:
-      self.x = x
-      self.y = y
-      self.z = z
+  def __init__(self, x, y, z):
+    self.x = x
+    self.y = y
+    self.z = z
 
   def __repr__(self):
     return "V3(%s, %s, %s)" % (self.x, self.y, self.z)
 
 class V2(object):
-  def __init__(self, x, y = None):
-    if (type(x) == numpy.matrix):
-      self.x, self.y = x.tolist()[0]
-    else:
-      self.x = x
-      self.y = y
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
 
   def __repr__(self):
     return "V2(%s, %s)" % (self.x, self.y)
@@ -132,16 +122,6 @@ def barycentric(A, B, C, P):
   )
 
 
-def allbarycentric(A, B, C, bbox_min, bbox_max):
-  barytransform = numpy.linalg.inv([[A.x, B.x, C.x], [A.y,B.y,C.y], [1, 1, 1]])
-  grid = numpy.mgrid[bbox_min.x:bbox_max.x, bbox_min.y:bbox_max.y].reshape(2,-1)
-  grid = numpy.vstack((grid, numpy.ones((1, grid.shape[1]))))
-  barycoords = numpy.dot(barytransform, grid)
-  # barycoords = barycoords[:,numpy.all(barycoords>=0, axis=0)]
-  barycoords = numpy.transpose(barycoords)
-  return barycoords
-
-
 # ===============================================================
 # Utils
 # ===============================================================
@@ -177,18 +157,36 @@ def dword(d):
   """
   return struct.pack('=l', d)
 
-def color(r, g, b):
-  """
-  Input: each parameter must be a number such that 0 <= number <= 255
-         each number represents a color in rgb
-  Output: 3 bytes
 
-  Example:
-  >>> bytes([0, 0, 255])
-  b'\x00\x00\xff'
-  """
-  return bytes([b, g, r])
+class color(object):
+  def __init__(self, r, g, b):
+    self.r = r
+    self.g = g
+    self.b = b
 
+  def __add__(self, other_color):
+    r = self.r + other_color.r
+    g = self.g + other_color.g
+    b = self.b + other_color.b
+
+    return color(r, g, b)
+
+  def __mul__(self, other):
+    r = self.r * other
+    g = self.g * other
+    b = self.b * other
+    return color(r, g, b)
+
+  def __repr__(self):
+    return "color(%s, %s, %s)" % (self.r, self.g, self.b)
+
+  def toBytes(self):
+    self.r = int(max(min(self.r, 255), 0))
+    self.g = int(max(min(self.g, 255), 0))
+    self.b = int(max(min(self.b, 255), 0))
+    return bytes([self.b, self.g, self.r])
+
+  __rmul__ = __mul__
 
 # ===============================================================
 # BMP
@@ -220,5 +218,5 @@ def writebmp(filename, width, height, pixels):
   # Pixel data (width x height x 3 pixels)
   for x in range(height):
     for y in range(width):
-      f.write(pixels[x][y])
+      f.write(pixels[x][y].toBytes())
   f.close()

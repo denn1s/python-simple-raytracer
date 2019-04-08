@@ -1,7 +1,6 @@
 from lib import *
 from sphere import *
-from numpy import tan
-from math import pi
+from math import pi, tan
 
 BLACK = color(0, 0, 0)
 WHITE = color(255, 255, 255)
@@ -57,11 +56,7 @@ class Raytracer(object):
     shadow_material, shadow_intersect = self.scene_intersect(shadow_orig, light_dir)
     if shadow_material and length(sub(shadow_intersect.point, shadow_orig)) < light_distance:
       shadow_intensity = 0.1
-      return color(
-        int(material.diffuse[2] * shadow_intensity),
-        int(material.diffuse[1] * shadow_intensity),
-        int(material.diffuse[0] * shadow_intensity),
-      )
+      return material.diffuse * shadow_intensity
 
     intensity = self.light.intensity * max(0, dot(light_dir, intersect.normal))
 
@@ -70,23 +65,9 @@ class Raytracer(object):
       max(0, -dot(reflection, direction))**material.spec
     )
 
-    diffuse = (
-      int(material.diffuse[2] * intensity * material.albedo[0]),
-      int(material.diffuse[1] * intensity * material.albedo[0]),
-      int(material.diffuse[0] * intensity * material.albedo[0]),
-    )
-
-    specular = (
-      int(255 * specular_intensity * material.albedo[1]),
-      int(255 * specular_intensity * material.albedo[1]),
-      int(255 * specular_intensity * material.albedo[1])
-    )
-
-    return color(
-      diffuse[0] + specular[0] if diffuse[0] + specular[0] < 255 else 255,
-      diffuse[1] + specular[1] if diffuse[1] + specular[1] < 255 else 255,
-      diffuse[2] + specular[2] if diffuse[2] + specular[2] < 255 else 255
-    )
+    diffuse = material.diffuse * intensity * material.albedo[0]
+    specular = color(255, 255, 255) * specular_intensity * material.albedo[1]
+    return diffuse + specular
 
   def scene_intersect(self, orig, direction):
     zbuffer = float('inf')
