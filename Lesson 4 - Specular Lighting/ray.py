@@ -52,13 +52,28 @@ class Raytracer(object):
     light_dir = norm(sub(self.light.position, intersect.point))
     intensity = self.light.intensity * max(0, dot(light_dir, intersect.normal))
 
-    diffuse = color(
-      int(material.diffuse[2] * intensity),
-      int(material.diffuse[1] * intensity),
-      int(material.diffuse[0] * intensity),
+    reflection = reflect(light_dir, intersect.normal)
+    specular_intensity = self.light.intensity * (
+      max(0, -dot(reflection, direction))**material.spec
     )
 
-    return diffuse
+    diffuse = (
+      int(material.diffuse[2] * intensity * material.albedo[0]),
+      int(material.diffuse[1] * intensity * material.albedo[0]),
+      int(material.diffuse[0] * intensity * material.albedo[0]),
+    )
+
+    specular = (
+      int(255 * specular_intensity * material.albedo[1]),
+      int(255 * specular_intensity * material.albedo[1]),
+      int(255 * specular_intensity * material.albedo[1])
+    )
+
+    return color(
+      diffuse[0] + specular[0] if diffuse[0] + specular[0] < 255 else 255,
+      diffuse[1] + specular[1] if diffuse[1] + specular[1] < 255 else 255,
+      diffuse[2] + specular[2] if diffuse[2] + specular[2] < 255 else 255
+    )
 
   def scene_intersect(self, orig, direction):
     zbuffer = float('inf')
@@ -86,14 +101,14 @@ class Raytracer(object):
         self.pixels[y][x] = self.cast_ray(V3(0,0,0), direction)
 
 
-ivory = Material(diffuse=color(100, 100, 80))
-rubber = Material(diffuse=color(80, 0, 0))
+ivory = Material(diffuse=color(100, 100, 80), albedo=(0.6,  0.3), spec=50)
+rubber = Material(diffuse=color(80, 0, 0), albedo=(0.9,  0.1), spec=10)
 
 
 r = Raytracer(1000, 1000)
 
 r.light = Light(
-  position=V3(-20, 20,  20),
+  position=V3(-20, 20, 20),
   intensity=1.5
 )
 
