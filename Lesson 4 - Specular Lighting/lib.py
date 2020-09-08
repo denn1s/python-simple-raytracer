@@ -84,9 +84,7 @@ def norm(v0):
   return V3(v0.x/v0length, v0.y/v0length, v0.z/v0length)
 
 def reflect(I, N):
-  Lm = mul(I, -1)
-  n = mul(N, 2 * dot(Lm, N))
-  return norm(sub(Lm, n))
+  return norm(sub(I, mul(N, 2 * dot(I, N))))
 
 def bbox(*vertices):
   """
